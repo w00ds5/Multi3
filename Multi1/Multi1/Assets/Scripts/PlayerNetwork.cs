@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class PlayerNetwork : NetworkBehaviour
 {
-    
+    // В FishNet v4 вместо атрибута [SyncVar] используется тип SyncVar<T>
     public readonly SyncVar<int> HP = new SyncVar<int>(100);
     public readonly SyncVar<bool> IsAlive = new SyncVar<bool>(true);
     public readonly SyncVar<string> Nickname = new SyncVar<string>("Player");
@@ -18,7 +18,7 @@ public class PlayerNetwork : NetworkBehaviour
 
     public override void OnStartNetwork()
     {
-        
+        // Подписываемся на изменения SyncVar
         HP.OnChange += OnHpChanged;
         IsAlive.OnChange += OnIsAliveChanged;
         Nickname.OnChange += OnNicknameChanged;
@@ -31,7 +31,7 @@ public class PlayerNetwork : NetworkBehaviour
 
     public override void OnStopNetwork()
     {
-        
+        // Отписываемся от изменений SyncVar
         HP.OnChange -= OnHpChanged;
         IsAlive.OnChange -= OnIsAliveChanged;
         Nickname.OnChange -= OnNicknameChanged;

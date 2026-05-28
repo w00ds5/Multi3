@@ -59,6 +59,7 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (UsePrediction)
         {
+            // === РЕЖИМ С КЛИЕНТСКИМ ПРЕДСКАЗАНИЕМ (CSP) ===
             if (base.IsOwner)
             {
                 Reconciliation(default);
@@ -73,11 +74,11 @@ public class PlayerMovement : NetworkBehaviour
         }
         else
         {
-            
+            // === РЕЖИМ БЕЗ ПРЕДСКАЗАНИЯ (Ожидание ответа сервера) ===
             if (base.IsOwner)
             {
                 GatherInput(out MoveData md);
-                
+                // Клиент не двигает себя сам локально. Он лишь отправляет ввод на сервер.
                 SendInputToServerRpc(md);
             }
         }
@@ -92,6 +93,7 @@ public class PlayerMovement : NetworkBehaviour
         md.Vertical = Input.GetAxisRaw("Vertical");
     }
 
+    // Общий физический метод симуляции шага движения
     private void MovePlayerPhysically(MoveData md)
     {
         Vector3 move = new Vector3(md.Horizontal, 0f, md.Vertical).normalized * _speed;
@@ -136,29 +138,32 @@ public class PlayerMovement : NetworkBehaviour
         Reconciliation(rd);
     }
 
+    // === ЛОГИКА ДВИЖЕНИЯ БЕЗ CSP ===
 
     [ServerRpc]
     private void SendInputToServerRpc(MoveData md)
     {
+        // Сервер авторитетно передвигает персонажа
         MovePlayerPhysically(md);
+        // Сервер принудительно рассылает позицию обратно клиентам (включая владельца)
         SyncPositionObserversRpc(transform.position, _verticalVelocity);
     }
 
     [ObserversRpc]
     private void SyncPositionObserversRpc(Vector3 pos, float vertVel)
     {
-        
+        // Игнорируем ручную синхронизацию, если включен режим CSP
         if (UsePrediction) return;
         if (base.IsServerInitialized) return; 
 
-        
+        // Применяем серверную позицию на клиенте (включая владельца, который ждал ее)
         if (_cc != null) _cc.enabled = false;
         transform.position = pos;
         if (_cc != null) _cc.enabled = true;
         _verticalVelocity = vertVel;
     }
 
-    
+    // Простой интерактивный интерфейс в углу экрана
     private void OnGUI()
     {
         if (!base.IsOwner) return;
